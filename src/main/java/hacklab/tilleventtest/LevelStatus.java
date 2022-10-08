@@ -2,6 +2,7 @@ package hacklab.tilleventtest;
 
 public class LevelStatus {
 
+
     class ExpStatus{
         //シリアル化 ばらばらのデータを一つのオブジェクトにする
         int needNextExp;
@@ -33,7 +34,7 @@ public class LevelStatus {
         return e.needNextExp;
     }
 
-    public int getLevel(int exp){
+    public int calLevel(int exp){
         ExpStatus e;
         //計算式
         int l = 1;

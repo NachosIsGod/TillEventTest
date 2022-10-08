@@ -1,6 +1,5 @@
 package hacklab.tilleventtest;
 
-import com.google.gson.Gson;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -13,67 +12,17 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.metadata.FixedMetadataValue;
-import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import java.util.Objects;
 
 public final class TillEventTest extends JavaPlugin implements Listener {
 
-    class Till {
-        int exp = 0;
-        int level = 1;
-        String name;
-        void exp(int value){
-            exp += value;
-        }
-        void level(){
-            level ++;
-        }
-    }
-
     LevelStatus ls = new LevelStatus();
-
-    Gson gson = new Gson();
 
     @Override
     public void onEnable() {
         // Plugin startup logic
         getServer().getPluginManager().registerEvents(this, this);
         getLogger().info("thisPluginIsTillEventTest");
-    }
-
-    public Till getTill(Player player) {
-        Till till = null;
-
-        if (!player.hasMetadata("Till")) {
-            Till value = new Till();
-
-            String jsonString = gson.toJson(value);
-
-            MetadataValue metadata = new FixedMetadataValue(this, jsonString);//metadataを作成する
-
-            player.setMetadata("Till", metadata);//キーをMetaTestにしてMetadataを書き込み
-
-            till = value;
-
-            System.out.println("hello");
-        }else{                                                //↓リストで返す
-            String jsonString = player.getMetadata("Till").get(0).asString();
-            //System.out.println("gson = " +gson);
-            //System.out.println("JsonString = " + jsonString);
-            till = gson.fromJson(jsonString,Till.class); //Jsonを介してtillに変換
-        }
-        return till;
-    }
-
-
-
-    public void setTill(Player player,Till till){
-        MetadataValue metadata = new FixedMetadataValue(this, gson.toJson(till));
-        player.setMetadata("Till", metadata);
-        System.out.print("NUKETA");
     }
 
     /*
@@ -87,11 +36,15 @@ public final class TillEventTest extends JavaPlugin implements Listener {
     }
      */
 
+    public void getTill(Player player){
+        Till till = Till.getInstance(this, player);
+    }
+
     @EventHandler
     public void onInteract(PlayerInteractEvent e){
-        if(e.getItem() == null)return;
         Material m = e.getItem().getType();
         Player p = e.getPlayer();
+        if(e.getItem() == null)p.sendMessage("素手じゃ耕せねーよ");
         if(e.getAction() == Action.RIGHT_CLICK_BLOCK) {
             if (m == Material.WOODEN_HOE || m == Material.STONE_HOE || m == Material.IRON_HOE || m == Material.GOLDEN_HOE || m == Material.DIAMOND_HOE || m == Material.NETHERITE_HOE) {
                 Block b = e.getClickedBlock();
@@ -101,20 +54,14 @@ public final class TillEventTest extends JavaPlugin implements Listener {
                     p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
 
                     //metadata
-                    Till till = getTill(p);
+                    Till till = Till.getInstance(this, p);
 
-                    if(b.getType() == Material.DIRT)till.exp(9);
-                    if(b.getType() == Material.GRASS_BLOCK)till.exp(19);
+                    if(b.getType() == Material.DIRT)till.expup(9);
+                    if(b.getType() == Material.GRASS_BLOCK)till.expup(19);
 
-                    if(ls.getNeedNextExp(till.level) <= till.exp){
-                        till.level();
-                        till.exp = 0;
+                    if(ls.getNeedNextExp(till.getLevel()) <= till.getExp()){
+                        till.levelup();
                     }
-
-                    p.sendMessage(String.valueOf(ls.getGetExp(till.level)));
-
-                    System.out.println(till.exp);
-                    setTill(p,till);
 
                     //particle
                     Location loc = e.getClickedBlock().getLocation();
@@ -122,12 +69,11 @@ public final class TillEventTest extends JavaPlugin implements Listener {
                     loc.getWorld().spawnParticle(
                             Particle.VILLAGER_HAPPY, // パーティクルの種類
                             loc, // 発生させる場所
-                            8,// 発生させる数
+                            4,// 発生させる数
                             0.3, // 散開させるXの範囲
                             0, // 散開させるYの範囲
                             0.3 // 散開させるZの範囲
                     );
-
                 }
             }
         }
@@ -136,15 +82,16 @@ public final class TillEventTest extends JavaPlugin implements Listener {
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args) {
         if(args.length == 0)return false;
+        Player p = (Player)sender;
 
-        Till till = getTill((Player)sender);
+        Till till = Till.getInstance(this, p);
 
         if(args[0].equals("level")){
-            sender.sendMessage(String.valueOf(till.level));
-            sender.sendMessage(String.valueOf(ls.getLevel(till.exp)) );
+            sender.sendMessage(String.valueOf(till.getLevel()));
+            sender.sendMessage(String.valueOf(ls.calLevel(till.getExp())) );
 
-            System.out.println(String.valueOf(till.level));
-            System.out.println(String.valueOf(ls.getLevel(till.exp)) );
+            System.out.println(till.getLevel());
+            System.out.println(ls.calLevel(till.getExp()));
 
         }
 
