@@ -1,0 +1,7 @@
+name: TillEventTest
+version: '${project.version}'
+main: hacklab.tilleventtest.TillEventTest
+api-version: 1.19
+
+commands:
+  till:
